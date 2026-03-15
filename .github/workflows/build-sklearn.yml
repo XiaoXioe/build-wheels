@@ -1,0 +1,30 @@
+name: Build scikit-learn (Alpine ARM64)
+
+# Konfigurasi ini memungkinkan kamu menjalankan tombol "Run workflow" secara manual
+on:
+  workflow_dispatch:
+
+jobs:
+  build-wheel:
+    # Menggunakan server ARM64 asli (tanpa emulator) agar proses compile ngebut!
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build wheel di dalam Alpine ARM64 container
+        run: |
+          # Jalankan container Alpine, install compiler, dan masak file .whl
+          docker run --rm -v ${{ github.workspace }:/workspace alpine:edge sh -c "
+            apk update &&
+            apk add python3 python3-dev py3-pip build-base gfortran openblas-dev linux-headers &&
+            mkdir -p /workspace/wheels &&
+            pip wheel scikit-learn -w /workspace/wheels
+          "
+
+      - name: Upload Hasil Artifact (.whl)
+        uses: actions/upload-artifact@v4
+        with:
+          name: scikit-learn-musllinux-arm64
+          path: wheels/*.whl
